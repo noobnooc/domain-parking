@@ -32,6 +32,8 @@
 		}
 	];
 
+	const visibleWorks = works.slice(0, 4);
+
 	const emailParts = ['nooc', 'nooc.me'];
 	const emailAddress = $derived(emailParts.join('@'));
 
@@ -85,7 +87,7 @@
 	<section class="works">
 		<h2>While You're Here</h2>
 		<ul class="works-list">
-			{#each works as work (work.name)}
+			{#each visibleWorks as work (work.name)}
 				<li>
 					<a href={work.link} target="_blank" rel="noopener noreferrer" class="work-item">
 						{#if work.icon}
