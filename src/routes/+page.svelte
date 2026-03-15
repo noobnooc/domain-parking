@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { dev } from '$app/environment';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
 	const works = [
 		{
 			name: 'Dippod',
@@ -36,20 +41,63 @@
 
 	const emailParts = ['nooc', 'nooc.me'];
 	const emailAddress = $derived(emailParts.join('@'));
-
-	let hostname = $state('');
-
-	$effect(() => {
-		hostname = window.location.hostname;
-	});
+	const numberFormatter = new Intl.NumberFormat('en-US');
+	const regionNames =
+		typeof Intl.DisplayNames === 'function'
+			? new Intl.DisplayNames(['en'], { type: 'region' })
+			: null;
 
 	const emailHref = $derived.by(() => {
-		const subject = encodeURIComponent(`Inquiry about ${hostname || 'this domain'}`);
-		const body = encodeURIComponent(
-			`Hi,\n\nI'm interested in the domain ${hostname || 'this domain'}.\n`
-		);
+		const hostname = data.hostname || 'this domain';
+		const subject = encodeURIComponent(`Inquiry about ${hostname}`);
+		const body = encodeURIComponent(`Hi,\n\nI'm interested in the domain ${hostname}.\n`);
 		return `mailto:${emailAddress}?subject=${subject}&body=${body}`;
 	});
+
+	const totalVisitsLabel = $derived.by(() => {
+		if (!data.visitorStats.enabled || data.visitorStats.totalVisits === null) {
+			return 'Unavailable';
+		}
+
+		return numberFormatter.format(data.visitorStats.totalVisits);
+	});
+
+	const lastVisitorLabel = $derived.by(() => {
+		if (!data.visitorStats.enabled) {
+			return 'Tracking unavailable';
+		}
+
+		const lastVisitor = data.visitorStats.lastVisitor;
+
+		if (!lastVisitor) {
+			return 'No previous visitor yet';
+		}
+
+		const location = [
+			lastVisitor.city,
+			formatCountry(lastVisitor.country, lastVisitor.flag)
+		].filter(Boolean);
+
+		return location.join(', ');
+	});
+
+	function formatCountry(country: string | null, flag: string | null): string {
+		if (!country) {
+			return flag ?? 'Unknown region';
+		}
+
+		let countryName = country;
+
+		if (regionNames) {
+			try {
+				countryName = regionNames.of(country) ?? country;
+			} catch {
+				countryName = country;
+			}
+		}
+
+		return [countryName, flag].filter(Boolean).join(' ');
+	}
 </script>
 
 <svelte:head>
@@ -107,7 +155,15 @@
 	</section>
 
 	<footer>
-		<p>
+		<p class="footer-stats" aria-label="Visitor stats">
+			<span>{totalVisitsLabel} visits</span>
+			<span class="footer-separator" aria-hidden="true">/</span>
+			<span>Last visitor: {lastVisitorLabel}</span>
+		</p>
+		{#if dev && !data.visitorStats.enabled}
+			<p class="stats-note">Bind a Cloudflare KV namespace as `KV` to enable live data.</p>
+		{/if}
+		<p class="footer-credit">
 			© {new Date().getFullYear()}
 			<a href="https://nooc.me" target="_blank" rel="noopener noreferrer">Nooc</a>
 		</p>
@@ -258,9 +314,30 @@
 		border-top: 1px solid #e5e5e5;
 	}
 
-	footer p {
+	.footer-stats {
+		font-size: 0.72rem;
+		line-height: 1.7;
+		color: #999;
+	}
+
+	.footer-separator {
+		margin: 0 0.45rem;
+		color: #ccc;
+	}
+
+	.stats-note {
+		margin-top: 6px;
+		font-size: 0.72rem;
+		color: #aaa;
+	}
+
+	.footer-credit {
 		font-size: 0.75rem;
 		color: #aaa;
+	}
+
+	footer p + p {
+		margin-top: 6px;
 	}
 
 	footer a {
@@ -289,6 +366,18 @@
 
 		.email:hover {
 			text-decoration-color: #e5e5e5;
+		}
+
+		.footer-stats {
+			color: #666;
+		}
+
+		.footer-separator {
+			color: #444;
+		}
+
+		.stats-note {
+			color: #666;
 		}
 
 		.divider {
@@ -324,7 +413,7 @@
 			border-top-color: #2a2a2a;
 		}
 
-		footer p {
+		.footer-credit {
 			color: #555;
 		}
 	}

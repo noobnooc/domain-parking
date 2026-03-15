@@ -15,7 +15,9 @@
 		"gen": "wrangler types"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["esbuild"]
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-cloudflare": "^7.2.6",
