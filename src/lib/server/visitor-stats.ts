@@ -5,6 +5,8 @@ export interface LastVisitor {
 	city: string | null;
 	country: string | null;
 	flag: string | null;
+	hostname: string | null;
+	origin: string | null;
 	timestamp: number;
 }
 
@@ -15,7 +17,11 @@ export interface VisitorStatsSnapshot {
 }
 
 export async function trackVisitorStats(
-	platform: App.Platform | undefined
+	platform: App.Platform | undefined,
+	options: {
+		currentHostname?: string;
+		currentOrigin?: string;
+	} = {}
 ): Promise<VisitorStatsSnapshot> {
 	const kv = platform?.env.KV;
 
@@ -28,7 +34,7 @@ export async function trackVisitorStats(
 	}
 
 	const lastVisitor = await kv.get<LastVisitor>(KEY_LAST_VISITOR, 'json');
-	const currentVisitor = createCurrentVisitor(platform.cf);
+	const currentVisitor = createCurrentVisitor(platform.cf, options);
 
 	if (currentVisitor) {
 		await kv.put(KEY_LAST_VISITOR, JSON.stringify(currentVisitor));
@@ -46,11 +52,19 @@ export async function trackVisitorStats(
 	};
 }
 
-function createCurrentVisitor(cf: IncomingRequestCfProperties | undefined): LastVisitor | null {
+function createCurrentVisitor(
+	cf: IncomingRequestCfProperties | undefined,
+	options: {
+		currentHostname?: string;
+		currentOrigin?: string;
+	}
+): LastVisitor | null {
 	const country = normalizeLocation(cf?.country)?.toUpperCase() ?? null;
 	const city = normalizeLocation(cf?.city);
+	const hostname = normalizeHostname(options.currentHostname);
+	const origin = normalizeOrigin(options.currentOrigin);
 
-	if (!country && !city) {
+	if (!country && !city && !hostname) {
 		return null;
 	}
 
@@ -58,6 +72,8 @@ function createCurrentVisitor(cf: IncomingRequestCfProperties | undefined): Last
 		city,
 		country,
 		flag: toFlagEmoji(country),
+		hostname,
+		origin,
 		timestamp: Date.now()
 	};
 }
@@ -72,6 +88,26 @@ function parseVisitCount(value: string | null): number {
 	const parsed = Number.parseInt(value ?? '', 10);
 
 	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeHostname(value: string | undefined): string | null {
+	const normalized = value?.trim().toLowerCase();
+
+	return normalized ? normalized : null;
+}
+
+function normalizeOrigin(value: string | undefined): string | null {
+	const normalized = value?.trim();
+
+	if (!normalized) {
+		return null;
+	}
+
+	try {
+		return new URL(normalized).origin;
+	} catch {
+		return null;
+	}
 }
 
 function toFlagEmoji(country: string | null): string | null {

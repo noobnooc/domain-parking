@@ -3,5 +3,8 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform, url }) => ({
 	hostname: url.hostname,
-	visitorStats: await trackVisitorStats(platform)
+	visitorStats: await trackVisitorStats(platform, {
+		currentHostname: url.hostname,
+		currentOrigin: url.origin
+	})
 });

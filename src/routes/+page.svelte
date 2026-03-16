@@ -62,15 +62,23 @@
 		return numberFormatter.format(data.visitorStats.totalVisits);
 	});
 
-	const lastVisitorLabel = $derived.by(() => {
+	const lastVisitorDisplay = $derived.by(() => {
 		if (!data.visitorStats.enabled) {
-			return 'Tracking unavailable';
+			return {
+				locationLabel: 'Tracking unavailable',
+				domainLabel: null,
+				href: null
+			};
 		}
 
 		const lastVisitor = data.visitorStats.lastVisitor;
 
 		if (!lastVisitor) {
-			return 'No previous visitor yet';
+			return {
+				locationLabel: 'No previous visitor yet',
+				domainLabel: null,
+				href: null
+			};
 		}
 
 		const location = [
@@ -78,7 +86,11 @@
 			formatCountry(lastVisitor.country, lastVisitor.flag)
 		].filter(Boolean);
 
-		return location.join(', ');
+		return {
+			locationLabel: location.length === 0 ? 'Location unavailable' : location.join(', '),
+			domainLabel: lastVisitor.hostname,
+			href: lastVisitor.origin
+		};
 	});
 
 	function formatCountry(country: string | null, flag: string | null): string {
@@ -158,7 +170,24 @@
 		<p class="footer-stats" aria-label="Visitor stats">
 			<span>{totalVisitsLabel} visits</span>
 			<span class="footer-separator" aria-hidden="true">/</span>
-			<span>Last visitor: {lastVisitorLabel}</span>
+			<span>
+				Last visitor: {lastVisitorDisplay.locationLabel}
+				{#if lastVisitorDisplay.domainLabel}
+					{' - '}
+					{#if lastVisitorDisplay.href}
+						<a
+							class="footer-link"
+							href={lastVisitorDisplay.href}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							{lastVisitorDisplay.domainLabel}
+						</a>
+					{:else}
+						{lastVisitorDisplay.domainLabel}
+					{/if}
+				{/if}
+			</span>
 		</p>
 		{#if dev && !data.visitorStats.enabled}
 			<p class="stats-note">Bind a Cloudflare KV namespace as `KV` to enable live data.</p>
@@ -343,6 +372,11 @@
 	footer a {
 		color: inherit;
 		text-decoration: none;
+	}
+
+	.footer-link {
+		text-decoration: underline;
+		text-underline-offset: 0.14rem;
 	}
 
 	footer a:hover {
