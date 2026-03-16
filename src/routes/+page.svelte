@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
+	import { onMount } from 'svelte';
+	import type { VisitorStatsSnapshot } from '$lib/server/visitor-stats';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+	let trackedVisitorStats = $state<VisitorStatsSnapshot | null>(null);
 
 	const works = [
 		{
@@ -53,17 +56,18 @@
 		const body = encodeURIComponent(`Hi,\n\nI'm interested in the domain ${hostname}.\n`);
 		return `mailto:${emailAddress}?subject=${subject}&body=${body}`;
 	});
+	const visitorStats = $derived(trackedVisitorStats ?? data.visitorStats);
 
 	const totalVisitsLabel = $derived.by(() => {
-		if (!data.visitorStats.enabled || data.visitorStats.totalVisits === null) {
+		if (!visitorStats.enabled || visitorStats.totalVisits === null) {
 			return 'Unavailable';
 		}
 
-		return numberFormatter.format(data.visitorStats.totalVisits);
+		return numberFormatter.format(visitorStats.totalVisits);
 	});
 
 	const lastVisitorDisplay = $derived.by(() => {
-		if (!data.visitorStats.enabled) {
+		if (!visitorStats.enabled) {
 			return {
 				locationLabel: 'Tracking unavailable',
 				domainLabel: null,
@@ -71,7 +75,7 @@
 			};
 		}
 
-		const lastVisitor = data.visitorStats.lastVisitor;
+		const lastVisitor = visitorStats.lastVisitor;
 
 		if (!lastVisitor) {
 			return {
@@ -110,6 +114,45 @@
 
 		return [countryName, flag].filter(Boolean).join(' ');
 	}
+
+	onMount(() => {
+		if (!visitorStats.enabled) {
+			return;
+		}
+
+		let cancelled = false;
+
+		void trackVisitor();
+
+		return () => {
+			cancelled = true;
+		};
+
+		async function trackVisitor() {
+			try {
+				const response = await fetch('/api/visitor', {
+					method: 'POST',
+					headers: {
+						accept: 'application/json'
+					}
+				});
+
+				if (!response.ok) {
+					return;
+				}
+
+				const payload = (await response.json()) as {
+					visitorStats?: VisitorStatsSnapshot;
+				};
+
+				if (!cancelled && payload.visitorStats) {
+					trackedVisitorStats = payload.visitorStats;
+				}
+			} catch {
+				// Ignore client-side tracking failures and keep the server snapshot.
+			}
+		}
+	});
 </script>
 
 <svelte:head>
