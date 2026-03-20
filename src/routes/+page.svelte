@@ -33,6 +33,12 @@
 			link: 'https://cassette.one'
 		},
 		{
+			name: 'Onei',
+			summary: 'Discover and bookmark AI tools in one place.',
+			icon: '/icons/onei.png',
+			link: 'https://onei.ai'
+		},
+		{
 			name: 'YouminCO',
 			summary: 'A digital nomad community in Chinese.',
 			icon: '/icons/youminco.webp',
@@ -40,7 +46,7 @@
 		}
 	];
 
-	const visibleWorks = works.slice(0, 4);
+	const visibleWorks = works.slice(0, 5);
 
 	const emailParts = ['nooc', 'nooc.me'];
 	const emailAddress = $derived(emailParts.join('@'));
