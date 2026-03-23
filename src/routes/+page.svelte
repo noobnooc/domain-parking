@@ -48,8 +48,7 @@
 
 	const visibleWorks = works.slice(0, 5);
 
-	const emailParts = ['nooc', 'nooc.me'];
-	const emailAddress = $derived(emailParts.join('@'));
+	let emailAddress = $state('');
 	const numberFormatter = new Intl.NumberFormat('en-US');
 	const regionNames =
 		typeof Intl.DisplayNames === 'function'
@@ -57,6 +56,10 @@
 			: null;
 
 	const emailHref = $derived.by(() => {
+		if (!emailAddress) {
+			return null;
+		}
+
 		const hostname = data.hostname || 'this domain';
 		const subject = encodeURIComponent(`Inquiry about ${hostname}`);
 		const body = encodeURIComponent(`Hi,\n\nI'm interested in the domain ${hostname}.\n`);
@@ -121,7 +124,15 @@
 		return [countryName, flag].filter(Boolean).join(' ');
 	}
 
+	function buildEmailAddress(): string {
+		const localPart = ['no', 'oc'].join('');
+		const domainPart = ['nooc', 'me'].join('.');
+		return [localPart, domainPart].join(String.fromCharCode(64));
+	}
+
 	onMount(() => {
+		emailAddress = buildEmailAddress();
+
 		if (!visitorStats.enabled) {
 			return;
 		}
@@ -187,7 +198,11 @@
 		<h1>This domain is not currently in use</h1>
 		<p class="subtitle">
 			If you are interested in purchasing this domain, please contact
-			<a class="email" href={emailHref}>{emailAddress}</a>
+			{#if emailHref}
+				<a class="email" href={emailHref}>{emailAddress}</a>
+			{:else}
+				<span class="email email-pending">email shown after page load</span>
+			{/if}
 		</p>
 	</section>
 
@@ -290,6 +305,12 @@
 
 	.email:hover {
 		text-decoration-color: #111;
+	}
+
+	.email-pending {
+		color: #777;
+		font-weight: 400;
+		text-decoration: none;
 	}
 
 	.divider {
@@ -449,6 +470,10 @@
 
 		.email:hover {
 			text-decoration-color: #e5e5e5;
+		}
+
+		.email-pending {
+			color: #888;
 		}
 
 		.footer-stats {
