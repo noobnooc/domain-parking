@@ -130,6 +130,24 @@
 		return [localPart, domainPart].join(String.fromCharCode(64));
 	}
 
+	function collectClientHints() {
+		let timezone: string | undefined;
+
+		try {
+			timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		} catch {
+			timezone = undefined;
+		}
+
+		return {
+			path: location.pathname,
+			referrer: document.referrer,
+			language: navigator.language,
+			timezone,
+			viewport: `${window.innerWidth}x${window.innerHeight}`
+		};
+	}
+
 	onMount(() => {
 		emailAddress = buildEmailAddress();
 
@@ -150,8 +168,10 @@
 				const response = await fetch('/api/visitor', {
 					method: 'POST',
 					headers: {
-						accept: 'application/json'
-					}
+						accept: 'application/json',
+						'content-type': 'application/json'
+					},
+					body: JSON.stringify(collectClientHints())
 				});
 
 				if (!response.ok) {
@@ -254,7 +274,9 @@
 			</span>
 		</p>
 		{#if dev && !data.visitorStats.enabled}
-			<p class="stats-note">Bind a Cloudflare KV namespace as `KV` to enable live data.</p>
+			<p class="stats-note">
+				Bind a Cloudflare D1 database as `DB` and run `pnpm db:migrate:local` to enable live data.
+			</p>
 		{/if}
 		<p class="footer-credit">
 			© {new Date().getFullYear()}
