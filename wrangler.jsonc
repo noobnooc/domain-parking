@@ -8,7 +8,14 @@
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
 	},
-	"kv_namespaces": [{ "binding": "KV", "id": "864ee0bc5e7844679278f13f65f334b2" }],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "domain-parking",
+			"database_id": "3dd155e1-7fcd-49f7-b9f1-c764de09f608",
+			"migrations_dir": "migrations"
+		}
+	],
 	"workers_dev": true,
 	"preview_urls": true
 }
