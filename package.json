@@ -14,8 +14,7 @@
 		"format": "prettier --write .",
 		"gen": "wrangler types",
 		"db:migrate": "wrangler d1 migrations apply domain-parking --remote",
-		"db:migrate:local": "wrangler d1 migrations apply domain-parking --local",
-		"db:seed-total-visits": "node scripts/seed-total-visits.mjs"
+		"db:migrate:local": "wrangler d1 migrations apply domain-parking --local"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [

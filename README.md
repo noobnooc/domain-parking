@@ -78,10 +78,24 @@ pnpm db:migrate:local
 
 # production database
 pnpm db:migrate
-
-# one-time: carry the old KV counter over so the number does not reset
-pnpm db:seed-total-visits
 ```
+
+Production deploys run `pnpm db:migrate` from the Workers Builds deploy
+command, so a new migration is applied as part of the deploy.
+
+### The `total_visits` counter is not `COUNT(*)`
+
+Visit tracking used to live in KV. When it moved to D1 the KV total was carried
+over as a starting baseline, recorded in `visit_counters` as `legacy_kv_visits`:
+
+```
+legacy_kv_visits = 1732   -- visits from the KV era, no detail rows exist
+total_visits     = 1732 + one per non-bot row in `visits`
+```
+
+So `total_visits` is the number shown in the footer, while `visits` only holds
+detail rows from the D1 era onwards. Use `COUNT(*)` over `visits` for analysis
+and the counter only for the public total.
 
 ### Example queries
 
