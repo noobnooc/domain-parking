@@ -61,6 +61,6 @@ CREATE TABLE visit_counters (
 	value INTEGER NOT NULL DEFAULT 0
 );
 
--- Seeded at 0. Run `pnpm db:seed-total-visits` once to carry over the legacy
--- KV counter so the public number does not reset.
+-- Seeded at 0. The pre-D1 KV total was carried over on top of this as a
+-- one-time baseline; see `legacy_kv_visits` in the README.
 INSERT INTO visit_counters (name, value) VALUES ('total_visits', 0);
